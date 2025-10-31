@@ -115,3 +115,25 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Custom utility classes */
+.hover-elevate {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.hover-elevate:hover {
+  @apply shadow-lg -translate-y-1;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
