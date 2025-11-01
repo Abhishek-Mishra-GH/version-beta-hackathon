@@ -25,7 +25,7 @@ export default function PatientDashboard() {
   const [grantSuccess, setGrantSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const patientId = "1234"; // ✅ Fixed dummy patient ID
+  const patientId = "P0001"; // ✅ Fixed dummy patient ID
 
   // Fetch all records for the dummy patient
   const fetchRecords = async () => {
@@ -40,7 +40,7 @@ export default function PatientDashboard() {
 
   // Fetch doctors who currently have access
   const fetchAccessGrants = async () => {
-    const dummyDoctors = ["12345", "doc_002", "doc_003", "0x36b54e717EeE10b78C66b908de0448cbEaDe4b1f"];
+    const dummyDoctors = ["D01", "D02", "D03", "D04","D05", "D06", "D07", "D08"];
     try {
       const contract: any = await getContract();
       const grants: any[] = [];
