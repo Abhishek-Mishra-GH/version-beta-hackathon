@@ -14,8 +14,8 @@ export default function DoctorDashboard() {
   const [status, setStatus] = useState("");
   const router = useRouter();
 
-  const doctorId = "1234";
-  const patientIds = ["PAT1234", "PAT5678", "PAT9999"];
+  const doctorId = "12345";
+  const patientIds = ["1234"];
 
   // ✅ Fetch authorized records
   const fetchAuthorizedRecords = async () => {
@@ -26,7 +26,9 @@ export default function DoctorDashboard() {
       const visiblePatients: any[] = [];
 
       for (const id of patientIds) {
+        console.log(id, doctorId)
         const hasAccess = await contract.isAccessGranted(id, doctorId);
+        console.log(hasAccess)
         if (hasAccess) {
           const recs = await contract.getRecords(id);
           visiblePatients.push({ patientId: id, records: recs });

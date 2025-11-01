@@ -65,7 +65,7 @@ export default function HomePage() {
     if (!isAuthenticated) {
       void handleConnectWallet();
     } else {
-      router.push("/doctor-portal");
+      router.push("/doctor-dashboard");
     }
   };
 
