@@ -1,111 +1,123 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ShieldCheck, Clock } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { RefreshCcw, FileText } from "lucide-react";
+import { getContract } from "@/utils/contract";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 export default function DoctorDashboard() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [consents, setConsents] = useState([
-    {
-      id: "consent001",
-      patientName: "Nishant Mishra",
-      abhaId: "ABHA-1234-5678-9012",
-      status: "approved",
-      expiry: "Nov 20, 2025",
-      purpose: "Follow-up Consultation",
-    },
-    {
-      id: "consent002",
-      patientName: "Zoya Siddiqui",
-      abhaId: "ABHA-9876-5432-1011",
-      status: "pending",
-      expiry: "Nov 02, 2025",
-      purpose: "Lab Report Access",
-    },
-  ]);
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+  const router = useRouter();
 
-  const handleSearch = () => {
-    console.log("Searching for patient:", searchQuery);
-    // TODO: Integrate ABDM API to find patient by ABHA ID
+  const doctorId = "1234";
+  const patientIds = ["PAT1234", "PAT5678", "PAT9999"];
+
+  // ✅ Fetch authorized records
+  const fetchAuthorizedRecords = async () => {
+    try {
+      setLoading(true);
+      setStatus("🔍 Checking access...");
+      const contract: any = await getContract();
+      const visiblePatients: any[] = [];
+
+      for (const id of patientIds) {
+        const hasAccess = await contract.isAccessGranted(id, doctorId);
+        if (hasAccess) {
+          const recs = await contract.getRecords(id);
+          visiblePatients.push({ patientId: id, records: recs });
+        }
+      }
+
+      setRecords(visiblePatients);
+      setStatus("✅ Records fetched successfully!");
+    } catch (err) {
+      console.error("❌ Fetch failed:", err);
+      setStatus("❌ Error fetching records.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRequestConsent = (abhaId: string) => {
-    console.log("Requesting consent for patient:", abhaId);
-    // TODO: Call createConsent() or ABDM API
+  const handleViewRecord = (cid: string) => {
+    router.push(`/record/${cid}`);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#d4f1f9] to-[#fef6e4]">
+    <div className="min-h-screen bg-gradient-to-b from-[#e0f7fa] to-[#fef6e4]">
       <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Doctor Dashboard</h1>
-          <p className="text-gray-500 text-sm">
-            Manage patient consents and view authorized records
-          </p>
-        </div>
-
-        {/* Search Section */}
-        <div className="flex items-center gap-3 mb-8">
-          <Input
-            placeholder="Enter Patient ABHA ID"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-12 flex-1"
-          />
-          <Button onClick={handleSearch} size="lg" className="bg-blue-500 hover:bg-blue-600">
-            <Search className="h-5 w-5 mr-2" /> Search
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Doctor Dashboard</h1>
+            <p className="text-gray-500 text-sm">
+              View patient records with valid consent.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={fetchAuthorizedRecords}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
 
-        {/* Consents Section */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {consents.map((consent) => (
-            <Card key={consent.id} className="shadow-md border-0">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">{consent.patientName}</h2>
-                  <Badge
-                    // variant={
-                    //   consent.status === "approved" ? "success" : "secondary"
-                    // }
-                  >
-                    {consent.status.toUpperCase()}
-                  </Badge>
-                </div>
-                <p className="text-gray-600 text-sm mt-1">
-                  ABHA ID: {consent.abhaId}
-                </p>
-                <p className="text-gray-600 text-sm mt-2">
-                  Purpose: {consent.purpose}
-                </p>
-                <p className="text-gray-500 text-xs mt-1">
-                  Expiry: {consent.expiry}
-                </p>
+        {status && (
+          <p className="mb-4 text-sm bg-gray-100 px-3 py-2 rounded text-gray-700">
+            {status}
+          </p>
+        )}
 
-                {consent.status === "pending" && (
-                  <Button
-                    onClick={() => handleRequestConsent(consent.abhaId)}
-                    className="mt-4 w-full bg-green-500 hover:bg-green-600"
-                  >
-                    <ShieldCheck className="h-4 w-4 mr-2" /> Request Consent
-                  </Button>
-                )}
-                {consent.status === "approved" && (
-                  <Button
-                    className="mt-4 w-full bg-indigo-500 hover:bg-indigo-600"
-                    onClick={() => alert("Fetching data from IPFS...")}
-                  >
-                    <Clock className="h-4 w-4 mr-2" /> View Patient Data
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {loading ? (
+          <p>Loading records...</p>
+        ) : records.length === 0 ? (
+          <p>No authorized patient records found.</p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {records.map((patient) => (
+              <Card key={patient.patientId}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      Patient ID: {patient.patientId}
+                    </h2>
+                    <Badge variant="secondary">
+                      {patient.records.length} Records
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-4">
+                    {patient.records.map((r: any, i: number) => (
+                      <div
+                        key={i}
+                        className="border rounded-lg p-3 bg-muted/20 hover:bg-muted/40 transition cursor-pointer"
+                        onClick={() => handleViewRecord(r.cid)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-blue-500" />
+                          <span className="text-blue-600 underline text-sm break-all">
+                            {r.cid}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600">Metadata: {r.metadata}</p>
+                        <p className="text-xs text-gray-400">
+                          Uploaded:{" "}
+                          {new Date(Number(r.timestamp) * 1000).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

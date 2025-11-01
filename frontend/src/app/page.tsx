@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet } from "lucide-react";
 import Connect from "@/components/connect";
-import UploadButton from "@/components/UploadButton";
+// import UploadButton from "@/components/UploadButton";
 
 
 export default function HomePage() {
@@ -60,10 +60,10 @@ export default function HomePage() {
           </Button>
         </div>
 
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+        {/* <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
       <h1 className="text-3xl font-bold mb-4">Medical Records DApp</h1>
       <UploadButton />
-    </div>
+    </div> */}
 
         <p className="text-gray-500 mt-8 text-sm">
           Powered by IPFS · Pinata · Ethereum · ABDM
