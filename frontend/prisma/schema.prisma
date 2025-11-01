@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Base user model - stores wallet address and type
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  userType      UserType
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+
+  @@index([walletAddress])
+}
+
+// Patient-specific profile
+model PatientProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Personal Information
+  fullName         String
+  dateOfBirth      DateTime?
+  email            String?
+  phone            String?
+  emergencyContact String?
+
+  // Medical Information
+  bloodType         String?
+  allergies         String[]
+  chronicConditions String[]
+
+  // Profile Settings
+  profilePicture String? // IPFS CID
+  bio            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([fullName])
+}
+
+// Doctor-specific profile
+model DoctorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Personal Information
+  fullName String
+  email    String?
+  phone    String?
+
+  // Professional Information
+  specialty         String
+  licenseNumber     String   @unique
+  hospital          String?
+  yearsOfExperience Int?
+  credentials       String[] // ["MD", "FACC", etc.]
+
+  // Verification (auto-approved for demo)
+  verificationStatus    VerificationStatus @default(VERIFIED)
+  verificationDocuments String[] // IPFS CIDs of license/credentials
+
+  // Profile Settings
+  profilePicture String? // IPFS CID
+  bio            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([fullName])
+  @@index([specialty])
+  @@index([hospital])
+}
+
+// Enums
+enum UserType {
+  PATIENT
+  DOCTOR
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}

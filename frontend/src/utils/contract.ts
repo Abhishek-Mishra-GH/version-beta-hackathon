@@ -1,7 +1,5 @@
 // src/utils/contract.ts
 import { ethers } from "ethers";
-// import { MEDICAL_RECORDS_ABI } from "../abi/MedicalRecordsABI";
-// import {  abi } from "../abi/HealthDataRegistry.json"
 export const abi = [
     {
       "anonymous": false,
