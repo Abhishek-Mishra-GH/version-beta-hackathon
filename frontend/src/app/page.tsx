@@ -57,7 +57,7 @@ export default function HomePage() {
     if (!isAuthenticated) {
       void handleConnectWallet();
     } else {
-      router.push("/patient-dashboard");
+      router.push("/patient-dashboard/P0001");
     }
   };
 
@@ -65,7 +65,7 @@ export default function HomePage() {
     if (!isAuthenticated) {
       void handleConnectWallet();
     } else {
-      router.push("/doctor-dashboard");
+      router.push("/doctor-dashboard/D01");
     }
   };
 
