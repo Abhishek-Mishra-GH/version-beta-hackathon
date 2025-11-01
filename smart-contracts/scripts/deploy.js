@@ -1,15 +1,20 @@
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-      const MedicalRecords = await hre.ethers.getContractFactory("MedicalRecords");
-      const contract = await MedicalRecords.deploy();
-      await contract.waitForDeployment();
+  console.log("Deploying HealthDataRegistry...");
 
-      console.log("MedicalRecords deployed to:", await contract.getAddress());
+  const HealthDataRegistry = await ethers.getContractFactory(
+    "contracts/HealthDataRegistry.sol:HealthDataRegistry"
+  );
+  const contract = await HealthDataRegistry.deploy();
+
+  await contract.waitForDeployment();
+  console.log(`✅ Contract deployed at: ${contract.target}`);
 }
 
-main().catch((error) => {
-      console.error(error);
-      process.exitCode = 1;
-});
-
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("❌ Deployment failed:", error);
+    process.exit(1);
+  });
