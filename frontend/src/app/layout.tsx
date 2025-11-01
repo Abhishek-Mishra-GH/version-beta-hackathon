@@ -1,8 +1,10 @@
 import "@rainbow-me/rainbowkit/styles.css";
 import "@/styles/globals.css";
+import AIAssistant from "@/components/AIAssistant";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
+
 
 import Providers from "../components/provider/rainbow-provider";
 import { MainNav } from "@/components/main-nav";
@@ -27,6 +29,7 @@ export default function RootLayout({
         <Providers>
           <MainNav />
           {children}
+          <AIAssistant />
         </Providers>
       </body>
     </html>

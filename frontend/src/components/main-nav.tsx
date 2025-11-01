@@ -32,9 +32,9 @@ export function MainNav() {
   };
 
   // Hide navbar on home page
-  if (isOnHome) {
-    return null;
-  }
+  // if (isOnHome) {
+  //   return null;
+  // }
 
   return (
     <div className="border-b border-slate-700 bg-linear-to-r from-slate-900 to-slate-800">
@@ -43,7 +43,7 @@ export function MainNav() {
           href="/"
           className="bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-2xl font-black text-transparent"
         >
-          MedChain
+          SynCure
         </Link>
 
         <div className="flex items-center gap-4">

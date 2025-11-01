@@ -30,7 +30,7 @@ export default function PatientDashboard() {
   const [grantSuccess, setGrantSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const patientId = "P0002"; // 👈 Change for P0001 / P0003
+  const patientId = "P0001"; // 👈 Change for P0001 / P0003
 
   // Fetch records
   const fetchRecords = async () => {
@@ -62,10 +62,49 @@ export default function PatientDashboard() {
     }
   };
 
+  // 🔍 Analyze all health records using AI
+const analyzeHealthWithAI = async () => {
+  if (records.length === 0) {
+    alert("No records found to analyze!");
+    return;
+  }
+
+  setIsProcessing(true);
+  try {
+    const cids = records.map((r) => r.cid);
+    console.log(cids)
+    const response = await fetch("http://127.0.0.1:5001/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patient_id: patientId, cids }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log(data)
+      setProcessedDoc(data.analysis);
+    } else {
+      alert("AI analysis failed.");
+    }
+  } catch (error) {
+    console.error("AI analysis error:", error);
+    alert("Failed to connect to AI service.");
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
   useEffect(() => {
     if (activeTab === "records") void fetchRecords();
     if (activeTab === "access") void fetchAccessGrants();
   }, [activeTab]);
+
+  // useEffect(() => {
+  //   if (records.length > 0) {
+  //     analyzeHealthWithAI();
+  //   }
+  // }, [records]);
+  
 
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,42 +236,55 @@ export default function PatientDashboard() {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pb-20 space-y-10">
         {/* Records */}
-        {activeTab === "records" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="grid sm:grid-cols-2 gap-6"
-          >
-            {records.length === 0 ? (
-              <p className="text-center text-white/60 col-span-2">No records found.</p>
-            ) : (
-              records.map((record: any, i: number) => (
-                <Card key={i} className="bg-white/5 border-white/10 p-5 rounded-2xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText className="text-sky-400 h-5 w-5" />
-                    <p className="font-medium text-lg text-white">
-                      {JSON.parse(record.metadata).fileName}
-                    </p>
-                  </div>
-                  <p className="text-sm text-white/70 mb-2">
-                    Uploaded:{" "}
-                    {new Date(
-                      JSON.parse(record.metadata).uploadedAt
-                    ).toLocaleString()}
-                  </p>
-                  <a
-                    href={`https://gateway.pinata.cloud/ipfs/${record.cid}`}
-                    target="_blank"
-                    className="text-sky-400 text-sm flex items-center gap-1 hover:underline"
-                  >
-                    View on IPFS <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Card>
-              ))
-            )}
-          </motion.div>
-        )}
+        {/* Records */}
+{activeTab === "records" && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className="space-y-8"
+  >
+
+    {/* --- Records Grid --- */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="grid sm:grid-cols-2 gap-6"
+    >
+      {records.length === 0 ? (
+        <p className="text-center text-white/60 col-span-2">
+          No records found.
+        </p>
+      ) : (
+        records.map((record: any, i: number) => (
+          <Card key={i} className="bg-white/5 border-white/10 p-5 rounded-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="text-sky-400 h-5 w-5" />
+              <p className="font-medium text-lg text-white">
+                {JSON.parse(record.metadata).fileName}
+              </p>
+            </div>
+            <p className="text-sm text-white/70 mb-2">
+              Uploaded:{" "}
+              {new Date(
+                JSON.parse(record.metadata).uploadedAt
+              ).toLocaleString()}
+            </p>
+            <a
+              href={`https://gateway.pinata.cloud/ipfs/${record.cid}`}
+              target="_blank"
+              className="text-sky-400 text-sm flex items-center gap-1 hover:underline"
+            >
+              View on IPFS <ExternalLink className="h-4 w-4" />
+            </a>
+          </Card>
+        ))
+      )}
+    </motion.div>
+  </motion.div>
+)}
+
 
         {/* Upload */}
         {activeTab === "upload" && (
