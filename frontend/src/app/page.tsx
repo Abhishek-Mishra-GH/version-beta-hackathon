@@ -172,7 +172,7 @@ export default function HomePage() {
             transition={{ delay: 0.25, duration: 0.8 }}
             className="max-w-3xl text-lg text-white/70"
           >
-            MediChain orchestrates a patient-first data exchange: AI turns scans
+            SynCure orchestrates a patient-first data exchange: AI turns scans
             and PDFs into structured insights, while smart contracts manage
             time-bound consent for every clinician.
           </motion.p>
@@ -266,7 +266,7 @@ export default function HomePage() {
               privacy.
             </h2>
             <p className="text-lg text-white/70">
-              MediChain unifies patient autonomy, institutional compliance, and
+            SynCure unifies patient autonomy, institutional compliance, and
               real-time interoperability into a single platform.
             </p>
           </div>
@@ -391,7 +391,7 @@ export default function HomePage() {
           </h2>
           <p className="max-w-2xl text-lg text-white/70">
             Whether you operate a hospital network or a specialized clinic,
-            MediChain delivers auditable data exchange, AI-assisted triage, and
+            SynCure delivers auditable data exchange, AI-assisted triage, and
             wallet-native identity.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
@@ -419,7 +419,7 @@ export default function HomePage() {
       <footer className="border-t border-white/10 bg-[#080813] px-4 py-12">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            © {new Date().getFullYear()} MediChain. Secure health intelligence
+            © {new Date().getFullYear()} SynCure. Secure health intelligence
             for the decentralized era.
           </div>
           <div className="flex gap-6">

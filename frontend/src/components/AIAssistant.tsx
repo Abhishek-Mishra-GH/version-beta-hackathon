@@ -89,7 +89,8 @@ export default function AIAssistant() {
           >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Bot className="h-5 w-5 text-sky-400" /> MediChain AI Assistant
+                <Bot className="h-5 w-5 text-sky-400" /> 
+                DocTalk
               </h3>
 
               {/* Analyze Toggle (only visible on patient dashboard) */}

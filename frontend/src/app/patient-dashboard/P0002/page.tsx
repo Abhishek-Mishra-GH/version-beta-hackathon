@@ -8,7 +8,6 @@ import {
   ExternalLink,
   FileText,
   ShieldCheck,
-  Clock,
   RefreshCcw,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -28,11 +27,12 @@ export default function PatientDashboard() {
   const [isGranting, setIsGranting] = useState(false);
   const [grantError, setGrantError] = useState("");
   const [grantSuccess, setGrantSuccess] = useState(false);
+  const [aiMessage, setAiMessage] = useState<string>(""); // ✅ new state for AI feedback
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const patientId = "P0002"; // 👈 Change for P0001 / P0003
+  const patientId = "P0002";
 
-  // Fetch records
+  // Fetch records from blockchain
   const fetchRecords = async () => {
     try {
       const contract: any = await getContract();
@@ -43,7 +43,7 @@ export default function PatientDashboard() {
     }
   };
 
-  // Fetch doctors with access
+  // Fetch doctor access permissions
   const fetchAccessGrants = async () => {
     const dummyDoctors = ["D01", "D02", "D03", "D04", "D05", "D06"];
     try {
@@ -62,49 +62,42 @@ export default function PatientDashboard() {
     }
   };
 
-  // 🔍 Analyze all health records using AI
-const analyzeHealthWithAI = async () => {
-  if (records.length === 0) {
-    alert("No records found to analyze!");
-    return;
-  }
-
-  setIsProcessing(true);
-  try {
-    const cids = records.map((r) => r.cid);
-    console.log(cids)
-    const response = await fetch("http://127.0.0.1:5001/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patient_id: patientId, cids }),
-    });
-    const data = await response.json();
-    if (data.success) {
-      console.log(data)
-      setProcessedDoc(data.analysis);
-    } else {
-      alert("AI analysis failed.");
+  // 🔍 Analyze health records using AI
+  const analyzeHealthWithAI = async () => {
+    if (records.length === 0) {
+      setAiMessage("⚠️ No records found to analyze. Upload some records first!");
+      return;
     }
-  } catch (error) {
-    console.error("AI analysis error:", error);
-    alert("Failed to connect to AI service.");
-  } finally {
-    setIsProcessing(false);
-  }
-};
 
+    setIsProcessing(true);
+    setAiMessage("Analyzing your health records...");
+    try {
+      const cids = records.map((r) => r.cid);
+      const response = await fetch("http://127.0.0.1:5001/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patient_id: patientId, cids }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.analysis) {
+        setProcessedDoc(data.analysis);
+        setAiMessage("✅ AI successfully analyzed your records!");
+      } else {
+        setAiMessage("⚠️ AI analysis failed. Try again or ensure your records are valid PDFs.");
+      }
+    } catch (error) {
+      console.error("AI analysis error:", error);
+      setAiMessage("❌ Failed to connect to AI backend. Make sure Flask is running on port 5001.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "records") void fetchRecords();
     if (activeTab === "access") void fetchAccessGrants();
   }, [activeTab]);
-
-  // useEffect(() => {
-  //   if (records.length > 0) {
-  //     analyzeHealthWithAI();
-  //   }
-  // }, [records]);
-  
 
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +111,7 @@ const analyzeHealthWithAI = async () => {
     await processDocumentWithAI(file);
   };
 
-  // AI processing
+  // AI processing before upload (FHIR extraction)
   const processDocumentWithAI = async (file: File) => {
     setIsProcessing(true);
     try {
@@ -165,7 +158,7 @@ const analyzeHealthWithAI = async () => {
     }
   };
 
-  // Grant access
+  // Grant & revoke access logic
   const handleGrantAccess = async () => {
     if (!newDoctorId.trim()) return setGrantError("Enter doctor ID");
     setIsGranting(true);
@@ -192,7 +185,7 @@ const analyzeHealthWithAI = async () => {
       const tx = await contract.revokeAccess(patientId, doctorId);
       await tx.wait();
       fetchAccessGrants();
-    } catch (err) {
+    } catch {
       alert("Failed to revoke access");
     }
   };
@@ -202,12 +195,7 @@ const analyzeHealthWithAI = async () => {
       {/* Header */}
       <section className="py-16 text-center relative">
         <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 via-purple-500/10 to-pink-500/10 blur-3xl" />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative z-10"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative z-10">
           <h1 className="text-5xl font-bold mb-3">Patient Dashboard</h1>
           <p className="text-sky-300 text-lg font-medium">ID: {patientId}</p>
           <p className="text-white/70 max-w-2xl mx-auto mt-4">
@@ -223,9 +211,7 @@ const analyzeHealthWithAI = async () => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-5 py-2 rounded-full transition ${
-              activeTab === tab
-                ? "bg-sky-500 text-white shadow-md"
-                : "bg-white/10 text-gray-300 hover:bg-white/20"
+              activeTab === tab ? "bg-sky-500 text-white shadow-md" : "bg-white/10 text-gray-300 hover:bg-white/20"
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -236,64 +222,47 @@ const analyzeHealthWithAI = async () => {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pb-20 space-y-10">
         {/* Records */}
-        {/* Records */}
-{activeTab === "records" && (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="space-y-8"
-  >
+        {activeTab === "records" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8">
 
-    {/* --- Records Grid --- */}
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="grid sm:grid-cols-2 gap-6"
-    >
-      {records.length === 0 ? (
-        <p className="text-center text-white/60 col-span-2">
-          No records found.
-        </p>
-      ) : (
-        records.map((record: any, i: number) => (
-          <Card key={i} className="bg-white/5 border-white/10 p-5 rounded-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="text-sky-400 h-5 w-5" />
-              <p className="font-medium text-lg text-white">
-                {JSON.parse(record.metadata).fileName}
-              </p>
-            </div>
-            <p className="text-sm text-white/70 mb-2">
-              Uploaded:{" "}
-              {new Date(
-                JSON.parse(record.metadata).uploadedAt
-              ).toLocaleString()}
-            </p>
-            <a
-              href={`https://gateway.pinata.cloud/ipfs/${record.cid}`}
-              target="_blank"
-              className="text-sky-400 text-sm flex items-center gap-1 hover:underline"
+            {/* --- Records Grid --- */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="grid sm:grid-cols-2 gap-6"
             >
-              View on IPFS <ExternalLink className="h-4 w-4" />
-            </a>
-          </Card>
-        ))
-      )}
-    </motion.div>
-  </motion.div>
-)}
-
+              {records.length === 0 ? (
+                <p className="text-center text-white/60 col-span-2">No records found.</p>
+              ) : (
+                records.map((record: any, i: number) => (
+                  <Card key={i} className="bg-white/5 border-white/10 p-5 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText className="text-sky-400 h-5 w-5" />
+                      <p className="font-medium text-lg text-white">
+                        {JSON.parse(record.metadata).fileName}
+                      </p>
+                    </div>
+                    <p className="text-sm text-white/70 mb-2">
+                      Uploaded: {new Date(JSON.parse(record.metadata).uploadedAt).toLocaleString()}
+                    </p>
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${record.cid}`}
+                      target="_blank"
+                      className="text-sky-400 text-sm flex items-center gap-1 hover:underline"
+                    >
+                      View on IPFS <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Card>
+                ))
+              )}
+            </motion.div>
+          </motion.div>
+        )}
 
         {/* Upload */}
         {activeTab === "upload" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isProcessing}
@@ -301,17 +270,11 @@ const analyzeHealthWithAI = async () => {
             >
               <Upload className="mr-2 h-4 w-4" /> Select PDF
             </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
 
             {isProcessing && <p className="mt-4 text-sm text-white/60">Processing document...</p>}
 
-            {processedDoc && (
+            {processedDoc && processedDoc.fhirData && (
               <div className="mt-6">
                 <pre className="bg-black/30 text-left text-xs text-gray-300 p-3 rounded-lg max-h-64 overflow-auto">
                   {JSON.stringify(processedDoc.fhirData, null, 2)}
@@ -326,12 +289,7 @@ const analyzeHealthWithAI = async () => {
 
         {/* Access */}
         {activeTab === "access" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-8"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8">
             <Card className="bg-white/5 border-white/10 p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Plus className="text-sky-400" /> <span className="text-white">Grant Doctor Access</span>
@@ -353,7 +311,8 @@ const analyzeHealthWithAI = async () => {
 
             <Card className="bg-white/5 border-white/10 p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Users className="text-purple-400" /> <span className="text-white">Active Access ({accessGrants.length})</span>
+                <Users className="text-purple-400" />{" "}
+                <span className="text-white">Active Access ({accessGrants.length})</span>
               </h3>
               {accessGrants.length === 0 ? (
                 <p className="text-white/60">No active access found.</p>
@@ -386,7 +345,6 @@ const analyzeHealthWithAI = async () => {
         )}
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-white/10 bg-[#080813] py-8 text-center text-sm text-white/60">
         MediChain © {new Date().getFullYear()} | Powered by Arbitrum + IPFS + AI
       </footer>
